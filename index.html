@@ -132,7 +132,7 @@ body{
 .iconbtn:hover{background:rgba(255,255,255,.06);color:rgba(233,236,255,.92)}
 .iconbtn:active{transform:scale(.98)}
 
-.main{display:flex;flex-direction:column;min-width:0}
+.main{display:flex;flex-direction:column;min-width:0;min-height:0;}
 
 .top{
   padding:14px 16px;
@@ -152,6 +152,7 @@ body{
 }
 .msgs{
   flex:1;
+  min-height:0;
   overflow:auto;
   padding:18px 16px 10px;
   display:flex;
@@ -362,23 +363,28 @@ window._sel=(id)=>loadMessages(id);
 // Удаление ТОЛЬКО локально (без бэка), чтобы ничего не ломалось
 window._del = (e, id) => {
   e?.stopPropagation?.();
-  if(!confirm("Удалить чат локально? (В базе он останется, пока не добавишь удаление на бэк)")) return;
 
+  // помечаем чат удалённым локально
   addDeleted(id);
 
-  // убираем из текущего массива и обновляем UI
-  chats = chats.filter(c=>c.id!==id);
+  // убираем из текущего массива
+  chats = chats.filter(c => c.id !== id);
 
-  if(cur===id){
+  // если удалили текущий чат
+  if(cur === id){
     cur = chats[0]?.id || null;
-    $("msgs").innerHTML="";
-    $("title").textContent = cur ? (chats.find(c=>c.id===cur)?.title || "Чат") : "Выбери чат";
+    $("msgs").innerHTML = "";
+    $("title").textContent = cur
+      ? (chats.find(c=>c.id===cur)?.title || "Чат")
+      : "Выбери чат";
+
     if(cur) loadMessages(cur).catch(()=>{});
   }
 
   renderChats();
   setStatus("Готово");
 };
+
 
 function addMsg(role, text){
   const d=document.createElement("div");
