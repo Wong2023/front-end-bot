@@ -1,0 +1,148 @@
+<!doctype html><html lang="ru"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AI Chat</title><script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto;background:#0b1020;color:#e9ecff}
+.wrap{display:flex;height:100vh}
+.sidebar{width:310px;background:rgba(255,255,255,.06);backdrop-filter:blur(10px);border-right:1px solid rgba(255,255,255,.1);padding:14px;display:flex;flex-direction:column;gap:10px}
+.brand{display:flex;align-items:center;justify-content:space-between;padding:10px 10px;border-radius:14px;background:linear-gradient(135deg,#6d7cff,#8a4bff)}
+.brand b{font-size:16px}
+.btn{border:0;border-radius:12px;padding:10px 12px;font-weight:700;cursor:pointer}
+.btn.primary{background:#fff;color:#1b1b2a}
+.list{overflow:auto;display:flex;flex-direction:column;gap:8px}
+.item{padding:10px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);cursor:pointer}
+.item.active{outline:2px solid rgba(109,124,255,.8)}
+.item small{opacity:.75}
+.main{flex:1;display:flex;flex-direction:column}
+.top{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;gap:10px;align-items:center;justify-content:space-between}
+.card{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
+.msgs{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.msg{max-width:820px;padding:12px 14px;border-radius:16px;white-space:pre-wrap;line-height:1.35;border:1px solid rgba(255,255,255,.08)}
+.msg.user{align-self:flex-end;background:linear-gradient(135deg,#6d7cff,#8a4bff)}
+.msg.ai{align-self:flex-start;background:rgba(255,255,255,.06)}
+.input{display:flex;gap:10px;padding:14px;border-top:1px solid rgba(255,255,255,.1)}
+.input input{flex:1;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;outline:none}
+.input button{padding:12px 16px}
+.note{opacity:.8;font-size:12px}
+@media(max-width:860px){.sidebar{width:240px}}
+</style></head>
+<body><div class="wrap">
+  <div class="sidebar">
+    <div class="brand"><b>💬 AI Chats</b><button class="btn primary" id="newBtn">+ Новый</button></div>
+    <div class="list" id="chatList"></div>
+    <div class="note">История хранится в базе (по Telegram user_id).</div>
+  </div>
+  <div class="main">
+    <div class="top"><div class="card" id="title">Выбери чат</div><div class="card note" id="status">—</div></div>
+    <div class="msgs" id="msgs"></div>
+    <div class="input">
+      <input id="inp" placeholder="Напиши сообщение…"/>
+      <button class="btn primary" id="send">Отправить</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const BACKEND_URL="PASTE_YOUR_RENDER_URL_HERE"; // например https://xxx.onrender.com
+const tg=window.Telegram?.WebApp; tg?.ready?.(); tg?.expand?.();
+const initData=tg?.initData||""; // пусто в браузере -> сервер вернёт 403 (и это ок)
+let chats=[], cur=null;
+
+const $=id=>document.getElementById(id);
+const esc=s=>(s??"").replace(/[&<>"']/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
+function setStatus(t){$("status").textContent=t}
+
+async function api(path, opts){
+  const r=await fetch(BACKEND_URL+path, opts);
+  if(!r.ok){ throw new Error(await r.text()); }
+  return r;
+}
+
+async function loadChats(){
+  setStatus("Загрузка…");
+  const r=await api(`/chats?initData=${encodeURIComponent(initData)}`);
+  const j=await r.json(); chats=j.chats||[];
+  if(!cur && chats[0]) cur=chats[0].id;
+  renderChats(); if(cur) await loadMessages(cur);
+  setStatus("Готово");
+}
+
+async function loadMessages(chatId){
+  cur=chatId; renderChats(); $("title").textContent=(chats.find(c=>c.id===cur)?.title)||"Чат";
+  $("msgs").innerHTML="";
+  const r=await api(`/messages?initData=${encodeURIComponent(initData)}&chat_id=${encodeURIComponent(chatId)}`);
+  const j=await r.json();
+  (j.messages||[]).forEach(m=>addMsg(m.role,m.content));
+  $("msgs").scrollTop=$("msgs").scrollHeight;
+}
+
+function renderChats(){
+  $("chatList").innerHTML = chats.map(c=>`
+    <div class="item ${c.id===cur?"active":""}" onclick="window._sel('${c.id}')">
+      <div><b>${esc(c.title)}</b></div>
+      <small>${esc(c.id)}</small>
+    </div>`).join("") || `<div class="note">Чатов пока нет. Нажми “+ Новый”.</div>`;
+}
+window._sel=(id)=>loadMessages(id);
+
+function addMsg(role, text){
+  const d=document.createElement("div");
+  d.className="msg "+role;
+  d.textContent=text||"";
+  $("msgs").appendChild(d);
+  $("msgs").scrollTop=$("msgs").scrollHeight;
+  return d;
+}
+
+function newChat(){
+  const id=String(Date.now());
+  chats=[{id,title:"Новый чат"}].concat(chats); cur=id; renderChats(); $("msgs").innerHTML=""; $("title").textContent="Новый чат";
+}
+$("newBtn").onclick=newChat;
+
+async function send(){
+  const text=$("inp").value.trim(); if(!text||!cur) return;
+  $("inp").value="";
+  addMsg("user", text);
+  const aiEl=addMsg("ai",""); // сюда стримим
+  setStatus("AI печатает…");
+
+  const r=await api(`/chat/stream`,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ initData, chat_id: cur, text })
+  });
+
+  const reader=r.body.getReader(); const dec=new TextDecoder();
+  let buf="", full="";
+  while(true){
+    const {value,done}=await reader.read(); if(done) break;
+    buf += dec.decode(value,{stream:true});
+    const parts = buf.split("\n\n"); buf = parts.pop();
+    for(const p of parts){
+      const lines=p.split("\n").filter(x=>x.startsWith("data: "));
+      const chunk=lines.map(x=>x.slice(6)).join("\n");
+      if(chunk==="__START__"||chunk==="__DONE__") continue;
+      full += chunk;
+      aiEl.textContent = full;
+      $("msgs").scrollTop=$("msgs").scrollHeight;
+    }
+  }
+  setStatus("Готово");
+  await loadChats(); // обновит титулы/список из БД
+}
+$("send").onclick=send;
+$("inp").addEventListener("keydown",e=>{ if(e.key==="Enter") send(); });
+
+(async ()=>{
+  if(!initData){
+    setStatus("Открой внутри Telegram (initData пусто)");
+    $("msgs").innerHTML=`<div class="msg ai">❗ Этот интерфейс должен быть открыт внутри Telegram Mini App.\nВ браузере initData нет — сервер правильно блокирует запросы.</div>`;
+    return;
+  }
+  await loadChats().catch(e=>{
+    setStatus("Ошибка");
+    $("msgs").innerHTML=`<div class="msg ai">❌ ${esc(String(e))}</div>`;
+  });
+})();
+</script></body></html>
