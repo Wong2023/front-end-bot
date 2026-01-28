@@ -2,7 +2,12 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="viewport"
+      content="width=device-width,
+               initial-scale=1,
+               maximum-scale=1,
+               user-scalable=no,
+               viewport-fit=cover">
 <title>AI Chat</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
@@ -76,6 +81,11 @@ body{
 }
 
 .note{opacity:.85;font-size:12px;color:var(--muted)}
+
+html, body {
+  touch-action: manipulation;
+  overscroll-behavior: none;
+}
 
 .list{
   overflow:auto;
@@ -203,6 +213,10 @@ body{
 .input input::placeholder{color:rgba(233,236,255,.55)}
 .input button{padding:12px 16px}
 
+input, textarea {
+  font-size: 16px;
+}
+  
 .hamb{display:none;margin-right:10px}
 .drawerShade{
   display:none;
@@ -268,6 +282,7 @@ body{
 
     <div class="input">
       <input id="inp" placeholder="Напиши сообщение…"/>
+        <button class="btn" id="hideKb" title="Убрать клавиатуру">⬇️</button>
       <button class="btn primary" id="send">Отправить</button>
     </div>
   </div>
@@ -454,6 +469,24 @@ $("inp").addEventListener("keydown",e=>{ if(e.key==="Enter") send(); });
     $("msgs").innerHTML=`<div class="msg ai">❌ ${esc(String(e))}</div>`;
   });
 })();
+  // ===== УБРАТЬ КЛАВИАТУРУ ПО КНОПКЕ =====
+const hideKbBtn = document.getElementById("hideKb");
+if (hideKbBtn) {
+  hideKbBtn.onclick = () => {
+    const el = document.activeElement;
+    if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA")) {
+      el.blur();
+    }
+  };
+}
+
+// ===== ЗАКРЫВАТЬ КЛАВУ ПО ТАПУ ВНЕ INPUT =====
+document.addEventListener("touchstart", (e) => {
+  if (!e.target.closest(".input")) {
+    document.activeElement?.blur?.();
+  }
+});
+
 </script>
 </body>
 </html>
