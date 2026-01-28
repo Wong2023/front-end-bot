@@ -43,7 +43,7 @@
 </div>
 
 <script>
-const BACKEND_URL="PASTE_YOUR_RENDER_URL_HERE"; // например https://xxx.onrender.com
+const BACKEND_URL="https://telegram-miniapp-backend-nlwh.onrender.com"; // например https://xxx.onrender.com
 const tg=window.Telegram?.WebApp; tg?.ready?.(); tg?.expand?.();
 const initData=tg?.initData||""; // пусто в браузере -> сервер вернёт 403 (и это ок)
 let chats=[], cur=null;
