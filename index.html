@@ -1,40 +1,270 @@
-<!doctype html><html lang="ru"><head>
-<meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>AI Chat</title><script src="https://telegram.org/js/telegram-web-app.js"></script>
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AI Chat</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+
 <style>
-*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto;background:#0b1020;color:#e9ecff}
-.wrap{display:flex;height:100vh}
-.sidebar{width:310px;background:rgba(255,255,255,.06);backdrop-filter:blur(10px);border-right:1px solid rgba(255,255,255,.1);padding:14px;display:flex;flex-direction:column;gap:10px}
-.brand{display:flex;align-items:center;justify-content:space-between;padding:10px 10px;border-radius:14px;background:linear-gradient(135deg,#6d7cff,#8a4bff)}
-.brand b{font-size:16px}
-.btn{border:0;border-radius:12px;padding:10px 12px;font-weight:700;cursor:pointer}
-.btn.primary{background:#fff;color:#1b1b2a}
-.list{overflow:auto;display:flex;flex-direction:column;gap:8px}
-.item{padding:10px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);cursor:pointer}
-.item.active{outline:2px solid rgba(109,124,255,.8)}
-.item small{opacity:.75}
-.main{flex:1;display:flex;flex-direction:column}
-.top{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.1);display:flex;gap:10px;align-items:center;justify-content:space-between}
-.card{padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08)}
-.msgs{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
-.msg{max-width:820px;padding:12px 14px;border-radius:16px;white-space:pre-wrap;line-height:1.35;border:1px solid rgba(255,255,255,.08)}
-.msg.user{align-self:flex-end;background:linear-gradient(135deg,#6d7cff,#8a4bff)}
-.msg.ai{align-self:flex-start;background:rgba(255,255,255,.06)}
-.input{display:flex;gap:10px;padding:14px;border-top:1px solid rgba(255,255,255,.1)}
-.input input{flex:1;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#fff;outline:none}
+:root{
+  --bg:#070a12;
+  --panel:rgba(255,255,255,.06);
+  --stroke:rgba(255,255,255,.10);
+  --stroke2:rgba(255,255,255,.14);
+  --text:#e9ecff;
+  --muted:rgba(233,236,255,.65);
+  --muted2:rgba(233,236,255,.45);
+  --accent:#6d7cff;
+  --accent2:#8a4bff;
+  --r:18px;
+  --shadow:0 18px 60px rgba(0,0,0,.45);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto;
+  color:var(--text);
+  background:
+    radial-gradient(1200px 700px at 20% -10%, rgba(109,124,255,.30), transparent 60%),
+    radial-gradient(900px 600px at 110% 10%, rgba(138,75,255,.20), transparent 55%),
+    var(--bg);
+  overflow:hidden;
+}
+.wrap{
+  height:100vh;
+  display:grid;
+  grid-template-columns:340px 1fr;
+}
+.sidebar{
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  background:linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.035));
+  border-right:1px solid var(--stroke);
+  backdrop-filter:blur(12px);
+}
+.brand{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:12px 12px;
+  border-radius:var(--r);
+  background:linear-gradient(135deg, rgba(109,124,255,.95), rgba(138,75,255,.70));
+  box-shadow:var(--shadow);
+}
+.brand b{font-size:15px}
+
+.btn{
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(0,0,0,.18);
+  color:var(--text);
+  border-radius:14px;
+  padding:10px 12px;
+  font-weight:800;
+  cursor:pointer;
+  transition:transform .16s ease, background .16s ease, border-color .16s ease;
+}
+.btn:active{transform:scale(.98)}
+.btn.primary{
+  border:0;
+  color:#0b0f1f;
+  background:linear-gradient(135deg, #ffffff, rgba(255,255,255,.86));
+}
+
+.note{opacity:.85;font-size:12px;color:var(--muted)}
+
+.list{
+  overflow:auto;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  padding-right:6px;
+  height:calc(100vh - 140px);
+}
+.list::-webkit-scrollbar{width:10px}
+.list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:999px}
+
+.item{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 10px;
+  border-radius:16px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
+  cursor:pointer;
+  transition:background .16s ease, border-color .16s ease, transform .16s ease;
+}
+.item:hover{background:rgba(255,255,255,.07);border-color:var(--stroke2)}
+.item:active{transform:scale(.99)}
+.item.active{outline:2px solid rgba(109,124,255,.65)}
+
+.ava{
+  width:36px;height:36px;border-radius:14px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.10);
+  display:grid;place-items:center;
+}
+.meta{min-width:0;flex:1}
+.meta b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meta small{
+  display:block;
+  margin-top:2px;
+  color:var(--muted2);
+  font-size:11px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+
+.rowActions{display:flex;gap:6px}
+.iconbtn{
+  border:0;
+  background:transparent;
+  color:rgba(233,236,255,.75);
+  cursor:pointer;
+  padding:8px;
+  border-radius:12px;
+  transition:background .16s ease, color .16s ease, transform .16s ease;
+}
+.iconbtn:hover{background:rgba(255,255,255,.06);color:rgba(233,236,255,.92)}
+.iconbtn:active{transform:scale(.98)}
+
+.main{display:flex;flex-direction:column;min-width:0}
+
+.top{
+  padding:14px 16px;
+  border-bottom:1px solid var(--stroke);
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content:space-between;
+  background:rgba(255,255,255,.03);
+  backdrop-filter:blur(10px);
+}
+.card{
+  padding:10px 12px;
+  border-radius:14px;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
+}
+.msgs{
+  flex:1;
+  overflow:auto;
+  padding:18px 16px 10px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.msgs::-webkit-scrollbar{width:10px}
+.msgs::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:999px}
+
+.msg{
+  max-width:min(820px,92%);
+  padding:12px 14px;
+  border-radius:16px;
+  white-space:pre-wrap;
+  line-height:1.35;
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.05);
+  animation:pop .18s ease-out;
+}
+@keyframes pop{from{transform:translateY(6px);opacity:0}to{transform:none;opacity:1}}
+.msg.user{
+  align-self:flex-end;
+  background:linear-gradient(135deg, rgba(109,124,255,.55), rgba(138,75,255,.35));
+  border-color:rgba(109,124,255,.35);
+}
+.msg.ai{
+  align-self:flex-start;
+  background:rgba(255,255,255,.05);
+}
+
+.input{
+  display:flex;
+  gap:10px;
+  padding:12px 14px;
+  border-top:1px solid var(--stroke);
+  background:rgba(255,255,255,.03);
+  backdrop-filter:blur(10px);
+}
+.input input{
+  flex:1;
+  padding:12px 14px;
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(255,255,255,.05);
+  color:#fff;
+  outline:none;
+}
+.input input::placeholder{color:rgba(233,236,255,.55)}
 .input button{padding:12px 16px}
-.note{opacity:.8;font-size:12px}
-@media(max-width:860px){.sidebar{width:240px}}
-</style></head>
-<body><div class="wrap">
-  <div class="sidebar">
-    <div class="brand"><b>💬 AI Chats</b><button class="btn primary" id="newBtn">+ Новый</button></div>
+
+.hamb{display:none;margin-right:10px}
+.drawerShade{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.55);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .2s ease;
+  z-index:19;
+}
+@media (max-width: 920px){
+  .wrap{grid-template-columns:1fr}
+  .sidebar{
+    position:fixed;
+    top:0;left:0;height:100%;
+    width:min(360px,88vw);
+    transform:translateX(-104%);
+    transition:transform .22s ease;
+    z-index:20;
+    border-right:1px solid var(--stroke);
+  }
+  .sidebar.open{transform:translateX(0)}
+  .drawerShade{display:block}
+  .drawerShade.show{opacity:1;pointer-events:auto}
+  .hamb{display:inline-flex}
+  .list{height:calc(100vh - 156px)}
+}
+@media (max-width: 420px){
+  .top{padding:12px}
+  .card{padding:9px 10px}
+  .input{padding:10px}
+}
+</style>
+</head>
+
+<body>
+<div class="drawerShade" id="shade"></div>
+
+<div class="wrap">
+  <div class="sidebar" id="sidebar">
+    <div class="brand">
+      <b>💬 AI Chats</b>
+      <button class="btn primary" id="newBtn">+ Новый</button>
+    </div>
+
     <div class="list" id="chatList"></div>
     <div class="note">История хранится в базе (по Telegram user_id).</div>
   </div>
+
   <div class="main">
-    <div class="top"><div class="card" id="title">Выбери чат</div><div class="card note" id="status">—</div></div>
+    <div class="top">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0">
+        <button class="btn hamb" id="openSide" title="Чаты">☰</button>
+        <div class="card" id="title" style="min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          Выбери чат
+        </div>
+      </div>
+      <div class="card note" id="status">—</div>
+    </div>
+
     <div class="msgs" id="msgs"></div>
+
     <div class="input">
       <input id="inp" placeholder="Напиши сообщение…"/>
       <button class="btn primary" id="send">Отправить</button>
@@ -58,32 +288,97 @@ async function api(path, opts){
   return r;
 }
 
+// ====== Drawer (mobile) ======
+function openDrawer(){
+  $("sidebar").classList.add("open");
+  $("shade").classList.add("show");
+}
+function closeDrawer(){
+  $("sidebar").classList.remove("open");
+  $("shade").classList.remove("show");
+}
+$("openSide").onclick=openDrawer;
+$("shade").onclick=closeDrawer;
+
+// ====== Local delete "mask" (НЕ трогаем бэк) ======
+// Чтобы "ничего не ломалось", удаление делаем только локально.
+// При этом после loadChats() с сервера удалённые локально чаты будут появляться снова — это ожидаемо.
+const LS_DELETED_KEY = "deleted_chat_ids_v1";
+function getDeletedSet(){
+  try{ return new Set(JSON.parse(localStorage.getItem(LS_DELETED_KEY)||"[]")); }
+  catch{ return new Set(); }
+}
+function addDeleted(id){
+  const s=getDeletedSet(); s.add(String(id));
+  localStorage.setItem(LS_DELETED_KEY, JSON.stringify([...s]));
+}
+function isDeleted(id){
+  return getDeletedSet().has(String(id));
+}
+
+// ====== Load Chats / Messages (как было) ======
 async function loadChats(){
   setStatus("Загрузка…");
   const r=await api(`/chats?initData=${encodeURIComponent(initData)}`);
-  const j=await r.json(); chats=j.chats||[];
+  const j=await r.json(); chats=(j.chats||[]).filter(c=>!isDeleted(c.id));
+
   if(!cur && chats[0]) cur=chats[0].id;
-  renderChats(); if(cur) await loadMessages(cur);
+
+  // если текущий чат локально "удалили" — перескочим на первый
+  if(cur && isDeleted(cur)) cur = chats[0]?.id || null;
+
+  renderChats();
+  if(cur) await loadMessages(cur);
   setStatus("Готово");
 }
 
 async function loadMessages(chatId){
-  cur=chatId; renderChats(); $("title").textContent=(chats.find(c=>c.id===cur)?.title)||"Чат";
+  cur=chatId; renderChats();
+  $("title").textContent=(chats.find(c=>c.id===cur)?.title)||"Чат";
   $("msgs").innerHTML="";
   const r=await api(`/messages?initData=${encodeURIComponent(initData)}&chat_id=${encodeURIComponent(chatId)}`);
   const j=await r.json();
   (j.messages||[]).forEach(m=>addMsg(m.role,m.content));
   $("msgs").scrollTop=$("msgs").scrollHeight;
+  closeDrawer();
 }
 
+// ====== Render Chats (дизайн + кнопка удаления) ======
 function renderChats(){
   $("chatList").innerHTML = chats.map(c=>`
     <div class="item ${c.id===cur?"active":""}" onclick="window._sel('${c.id}')">
-      <div><b>${esc(c.title)}</b></div>
-      <small>${esc(c.id)}</small>
+      <div class="ava">💬</div>
+      <div class="meta">
+        <b>${esc(c.title)}</b>
+        <small>${esc(c.id)}</small>
+      </div>
+      <div class="rowActions">
+        <button class="iconbtn" title="Удалить чат (локально)" onclick="window._del(event,'${c.id}')">🗑</button>
+      </div>
     </div>`).join("") || `<div class="note">Чатов пока нет. Нажми “+ Новый”.</div>`;
 }
 window._sel=(id)=>loadMessages(id);
+
+// Удаление ТОЛЬКО локально (без бэка), чтобы ничего не ломалось
+window._del = (e, id) => {
+  e?.stopPropagation?.();
+  if(!confirm("Удалить чат локально? (В базе он останется, пока не добавишь удаление на бэк)")) return;
+
+  addDeleted(id);
+
+  // убираем из текущего массива и обновляем UI
+  chats = chats.filter(c=>c.id!==id);
+
+  if(cur===id){
+    cur = chats[0]?.id || null;
+    $("msgs").innerHTML="";
+    $("title").textContent = cur ? (chats.find(c=>c.id===cur)?.title || "Чат") : "Выбери чат";
+    if(cur) loadMessages(cur).catch(()=>{});
+  }
+
+  renderChats();
+  setStatus("Готово");
+};
 
 function addMsg(role, text){
   const d=document.createElement("div");
@@ -94,12 +389,19 @@ function addMsg(role, text){
   return d;
 }
 
+// Новый чат (как было)
 function newChat(){
   const id=String(Date.now());
-  chats=[{id,title:"Новый чат"}].concat(chats); cur=id; renderChats(); $("msgs").innerHTML=""; $("title").textContent="Новый чат";
+  chats=[{id,title:"Новый чат"}].concat(chats);
+  cur=id;
+  renderChats();
+  $("msgs").innerHTML="";
+  $("title").textContent="Новый чат";
+  closeDrawer();
 }
 $("newBtn").onclick=newChat;
 
+// Отправка (как было)
 async function send(){
   const text=$("inp").value.trim(); if(!text||!cur) return;
   $("inp").value="";
@@ -129,11 +431,12 @@ async function send(){
     }
   }
   setStatus("Готово");
-  await loadChats(); // обновит титулы/список из БД
+  await loadChats(); // обновит титулы/список из БД (и снова применит локальные удаления)
 }
 $("send").onclick=send;
 $("inp").addEventListener("keydown",e=>{ if(e.key==="Enter") send(); });
 
+// Boot (как было)
 (async ()=>{
   if(!initData){
     setStatus("Открой внутри Telegram (initData пусто)");
@@ -145,4 +448,6 @@ $("inp").addEventListener("keydown",e=>{ if(e.key==="Enter") send(); });
     $("msgs").innerHTML=`<div class="msg ai">❌ ${esc(String(e))}</div>`;
   });
 })();
-</script></body></html>
+</script>
+</body>
+</html>
