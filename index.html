@@ -282,7 +282,6 @@ input, textarea {
 
     <div class="input">
       <input id="inp" placeholder="Напиши сообщение…"/>
-        <button class="btn" id="hideKb" title="Убрать клавиатуру">⬇️</button>
       <button class="btn primary" id="send">Отправить</button>
     </div>
   </div>
@@ -469,16 +468,6 @@ $("inp").addEventListener("keydown",e=>{ if(e.key==="Enter") send(); });
     $("msgs").innerHTML=`<div class="msg ai">❌ ${esc(String(e))}</div>`;
   });
 })();
-  // ===== УБРАТЬ КЛАВИАТУРУ ПО КНОПКЕ =====
-const hideKbBtn = document.getElementById("hideKb");
-if (hideKbBtn) {
-  hideKbBtn.onclick = () => {
-    const el = document.activeElement;
-    if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA")) {
-      el.blur();
-    }
-  };
-}
 
 // ===== ЗАКРЫВАТЬ КЛАВУ ПО ТАПУ ВНЕ INPUT =====
 document.addEventListener("touchstart", (e) => {
