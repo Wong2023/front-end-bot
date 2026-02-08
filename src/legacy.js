@@ -5,7 +5,11 @@ export function startLegacy() {
 
   const BACKEND_URL="https://telegram-miniapp-backend-nlwh.onrender.com"; // например https://xxx.onrender.com
   const tg=window.Telegram?.WebApp; tg?.ready?.(); tg?.expand?.();
-  const initData=tg?.initData||""; // пусто в браузере -> сервер вернёт 403 (и это ок)
+  const initData = tg?.initData || "";
+const isDev =
+  location.hostname === "localhost" ||
+  location.hostname === "127.0.0.1";
+ // пусто в браузере -> сервер вернёт 403 (и это ок)
   let chats=[], cur=null;
 
   const $=id=>document.getElementById(id);
@@ -159,17 +163,32 @@ export function startLegacy() {
   $("send").onclick=send;
   $("inp").addEventListener("keydown",e=>{ if(e.key==="Enter") send(); });
 
-  (async ()=>{
-    if(!initData){
-      setStatus("Открой внутри Telegram (initData пусто)");
-      $("msgs").innerHTML=`<div class="msg ai">❗ Этот интерфейс должен быть открыт внутри Telegram Mini App.\nВ браузере initData нет — сервер правильно блокирует запросы.</div>`;
+ (async ()=>{
+  if (!initData) {
+    const isDev = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+
+    if (isDev) {
+      setStatus("DEV режим");
+      chats = [{ id: "dev", title: "DEV чат" }];
+      cur = "dev";
+      renderChats();
+      $("title").textContent = "DEV чат";
+      addMsg("ai", "Локальный режим: backend не вызываю (нет initData).");
       return;
     }
-    await loadChats().catch(e=>{
-      setStatus("Ошибка");
-      $("msgs").innerHTML=`<div class="msg ai">❌ ${esc(String(e))}</div>`;
-    });
-  })();
+
+    setStatus("Открой Mini App");
+    $("msgs").innerHTML = `<div class="msg ai">Открой через кнопку <b>Mini App</b> в боте.</div>`;
+    return;
+  }
+
+  await loadChats().catch(e=>{
+    setStatus("Ошибка");
+    $("msgs").innerHTML=`<div class="msg ai">❌ ${esc(String(e))}</div>`;
+  });
+})();
+
+
 
   // ===== ЗАКРЫВАТЬ КЛАВУ ПО ТАПУ ВНЕ INPUT =====
   const onTouch = (e) => {
