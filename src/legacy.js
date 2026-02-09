@@ -109,10 +109,25 @@ export function startLegacy() {
   let isGenerating = false;
   let abortCtrl = null;
 
+  function setSendMode(mode){
+    const btn = $("send");
+    if(!btn) return;
+
+    if(mode === "stop"){
+      btn.textContent = "Стоп";
+      btn.classList.remove("primary");
+      btn.dataset.mode = "stop";
+    } else {
+      btn.textContent = "Отправить";
+      btn.classList.add("primary");
+      btn.dataset.mode = "send";
+    }
+  }
+
   async function stopGeneration(){
     if(!isGenerating) return;
 
-    // 1) просим бэк остановиться (может упасть — не критично)
+    // просим бэк остановиться (может упасть — не критично)
     try{
       await api(`/chat/stop`,{
         method:"POST",
@@ -121,7 +136,7 @@ export function startLegacy() {
       });
     }catch(e){}
 
-    // 2) обрываем чтение стрима на фронте
+    // обрываем чтение стрима на фронте
     try{ abortCtrl?.abort(); }catch(e){}
   }
 
@@ -146,8 +161,6 @@ export function startLegacy() {
     const j=await r.json();
     (j.messages||[]).forEach(m=>addMsg(m.role,m.content));
 
-    // было: $("msgs").scrollTop=$("msgs").scrollHeight;
-    // FIX: скроллим вниз только если пользователь и так был внизу
     const box = $("msgs");
     if (isNearBottom(box)) box.scrollTop = box.scrollHeight;
 
@@ -195,8 +208,6 @@ export function startLegacy() {
     d.className="msg "+role;
     d.textContent=text||"";
 
-    // было: append + scroll всегда вниз
-    // FIX: скроллим вниз только если юзер был внизу до добавления
     const box = $("msgs");
     const stick = isNearBottom(box);
     box.appendChild(d);
@@ -227,16 +238,9 @@ export function startLegacy() {
     const aiEl=addMsg("ai","");
     setStatus("AI печатает…");
 
-    // ====== STOP support (ADD) ======
     isGenerating = true;
     abortCtrl = new AbortController();
-
-    // если в App.jsx есть кнопка id="stop" — покажем/активируем
-    if ($("stop")) {
-      $("stop").style.display = "";
-      $("stop").disabled = false;
-    }
-    if ($("send")) $("send").disabled = true;
+    setSendMode("stop");
 
     try{
       const r=await api(`/chat/stream`,{
@@ -258,8 +262,6 @@ export function startLegacy() {
           if(chunk==="__START__"||chunk==="__DONE__") continue;
           full+=chunk;
 
-          // было: всегда тянули вниз => нельзя листать
-          // FIX: тянем вниз ТОЛЬКО если пользователь был внизу
           const box = $("msgs");
           const stick = isNearBottom(box);
           aiEl.textContent=full;
@@ -269,7 +271,6 @@ export function startLegacy() {
       setStatus("Готово");
       await loadChats();
     } catch(e){
-      // AbortError при стопе — это ок, не считаем ошибкой
       const msg = String(e || "");
       if(!/AbortError/i.test(msg)){
         console.error(e);
@@ -282,18 +283,15 @@ export function startLegacy() {
     } finally {
       isGenerating = false;
       abortCtrl = null;
-
-      if ($("stop")) {
-        $("stop").style.display = "none";
-      }
-      if ($("send")) $("send").disabled = false;
+      setSendMode("send");
     }
   }
 
-  $("send").onclick=send;
-
-  // ====== STOP support (ADD) ======
-  if ($("stop")) $("stop").onclick=stopGeneration;
+  // ✅ одна кнопка: если генерим — стоп, иначе — отправить
+  $("send").onclick=()=>{
+    if(isGenerating) stopGeneration();
+    else send();
+  };
 
   $("inp").addEventListener("keydown",e=>{ if(e.key==="Enter") send(); });
 
@@ -324,6 +322,9 @@ export function startLegacy() {
     }
   };
   document.addEventListener("touchstart",onTouch);
+
+  // на старте ставим нормальный режим
+  setSendMode("send");
 
   return ()=>{ document.removeEventListener("touchstart",onTouch); };
 }
