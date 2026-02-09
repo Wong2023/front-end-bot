@@ -160,8 +160,19 @@ const isDev =
     setStatus("Готово");
     await loadChats();
   }
-  $("send").onclick=send;
-  $("inp").addEventListener("keydown",e=>{ if(e.key==="Enter") send(); });
+  $("send").onclick = (e) => {
+  e?.preventDefault?.();
+  send();
+};
+
+  $("inp").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();     // ← блокирует “submit/refresh” в некоторых WebView
+    e.stopPropagation();    // ← на всякий случай
+    send();
+  }
+});
+
 
  (async ()=>{
   if (!initData) {
