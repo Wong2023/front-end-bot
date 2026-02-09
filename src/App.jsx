@@ -11,6 +11,19 @@ export default function App() {
   return (
     <>
       <div className="drawerShade" id="shade"></div>
+      {/* Rename modal */}
+      <div className="modalShade" id="renameShade"></div>
+      <div className="modal" id="renameModal" role="dialog" aria-modal="true">
+        <div className="modalCard">
+          <div className="modalTitle">Переименовать чат</div>
+          <input id="renameInp" className="modalInput" placeholder="Название…" />
+          <div className="modalActions">
+            <button className="btn" id="renameCancel">Отмена</button>
+            <button className="btn primary" id="renameOk">Сохранить</button>
+          </div>
+        </div>
+      </div>
+
 
       <div className="wrap">
         <div className="sidebar" id="sidebar">

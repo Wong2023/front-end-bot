@@ -236,3 +236,59 @@ input, textarea {
   .card{padding:9px 10px}
   .input{padding:10px}
 }
+
+/* ===== Modern modal (rename chat) ===== */
+.modalShade{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.55);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .18s ease;
+  z-index:50;
+}
+.modal{
+  position:fixed;
+  inset:0;
+  display:grid;
+  place-items:center;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .18s ease, transform .18s ease;
+  transform:translateY(6px);
+  z-index:51;
+}
+.modal.show,
+.modalShade.show{
+  opacity:1;
+  pointer-events:auto;
+  transform:none;
+}
+.modalCard{
+  width:min(520px,92vw);
+  border-radius:18px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.14);
+  backdrop-filter:blur(14px);
+  box-shadow:0 24px 70px rgba(0,0,0,.55);
+  padding:14px;
+}
+.modalTitle{
+  font-weight:900;
+  margin:4px 6px 10px;
+}
+.modalInput{
+  width:100%;
+  padding:12px 14px;
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.14);
+  background:rgba(255,255,255,.06);
+  color:#fff;
+  outline:none;
+}
+.modalActions{
+  display:flex;
+  gap:10px;
+  justify-content:flex-end;
+  margin-top:12px;
+}
