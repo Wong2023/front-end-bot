@@ -158,7 +158,7 @@ const isDev =
       }
     }
     setStatus("Готово");
-    // await loadChats();
+    await loadChats();
   }
   $("send").onclick=send;
   $("inp").addEventListener("keydown",e=>{ if(e.key==="Enter") send(); });
