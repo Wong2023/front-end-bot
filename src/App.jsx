@@ -55,6 +55,7 @@ export default function App() {
 
           <div className="input">
             <input id="inp" placeholder="Напиши сообщение…" />
+            <button className="btn" id="stop" style={{ display: "none" }}>Стоп</button>
             <button className="btn primary" id="send">Отправить</button>
           </div>
         </div>

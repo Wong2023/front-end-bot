@@ -105,6 +105,26 @@ export function startLegacy() {
     return (el.scrollHeight - el.scrollTop - el.clientHeight) < 10;
   }
 
+  // ====== STOP support (ADD) ======
+  let isGenerating = false;
+  let abortCtrl = null;
+
+  async function stopGeneration(){
+    if(!isGenerating) return;
+
+    // 1) просим бэк остановиться (может упасть — не критично)
+    try{
+      await api(`/chat/stop`,{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ initData, chat_id: cur })
+      });
+    }catch(e){}
+
+    // 2) обрываем чтение стрима на фронте
+    try{ abortCtrl?.abort(); }catch(e){}
+  }
+
   // ====== Load Chats / Messages ======
   async function loadChats(){
     setStatus("Загрузка…");
@@ -198,42 +218,83 @@ export function startLegacy() {
 
   async function send(){
     const text=$("inp").value.trim(); if(!text||!cur) return;
+
+    // если вдруг уже генерим — остановим предыдущую
+    if(isGenerating) await stopGeneration();
+
     $("inp").value="";
     addMsg("user",text);
     const aiEl=addMsg("ai","");
     setStatus("AI печатает…");
 
-    const r=await api(`/chat/stream`,{
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body:JSON.stringify({ initData, chat_id:cur, text })
-    });
+    // ====== STOP support (ADD) ======
+    isGenerating = true;
+    abortCtrl = new AbortController();
 
-    const reader=r.body.getReader(); const dec=new TextDecoder();
-    let buf="",full="";
-    while(true){
-      const {value,done}=await reader.read(); if(done) break;
-      buf+=dec.decode(value,{stream:true});
-      const parts=buf.split("\n\n"); buf=parts.pop();
-      for(const p of parts){
-        const lines=p.split("\n").filter(x=>x.startsWith("data: "));
-        const chunk=lines.map(x=>x.slice(6)).join("\n");
-        if(chunk==="__START__"||chunk==="__DONE__") continue;
-        full+=chunk;
-
-        // было: всегда тянули вниз => нельзя листать
-        // FIX: тянем вниз ТОЛЬКО если пользователь был внизу
-        const box = $("msgs");
-        const stick = isNearBottom(box);
-        aiEl.textContent=full;
-        if(stick) box.scrollTop = box.scrollHeight;
-      }
+    // если в App.jsx есть кнопка id="stop" — покажем/активируем
+    if ($("stop")) {
+      $("stop").style.display = "";
+      $("stop").disabled = false;
     }
-    setStatus("Готово");
-    await loadChats();
+    if ($("send")) $("send").disabled = true;
+
+    try{
+      const r=await api(`/chat/stream`,{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify({ initData, chat_id:cur, text }),
+        signal: abortCtrl.signal
+      });
+
+      const reader=r.body.getReader(); const dec=new TextDecoder();
+      let buf="",full="";
+      while(true){
+        const {value,done}=await reader.read(); if(done) break;
+        buf+=dec.decode(value,{stream:true});
+        const parts=buf.split("\n\n"); buf=parts.pop();
+        for(const p of parts){
+          const lines=p.split("\n").filter(x=>x.startsWith("data: "));
+          const chunk=lines.map(x=>x.slice(6)).join("\n");
+          if(chunk==="__START__"||chunk==="__DONE__") continue;
+          full+=chunk;
+
+          // было: всегда тянули вниз => нельзя листать
+          // FIX: тянем вниз ТОЛЬКО если пользователь был внизу
+          const box = $("msgs");
+          const stick = isNearBottom(box);
+          aiEl.textContent=full;
+          if(stick) box.scrollTop = box.scrollHeight;
+        }
+      }
+      setStatus("Готово");
+      await loadChats();
+    } catch(e){
+      // AbortError при стопе — это ок, не считаем ошибкой
+      const msg = String(e || "");
+      if(!/AbortError/i.test(msg)){
+        console.error(e);
+        setStatus("Ошибка");
+        if(!aiEl.textContent) aiEl.textContent = "❌ Ошибка";
+      } else {
+        setStatus("Остановлено");
+        if(!aiEl.textContent) aiEl.textContent = "⏹ Остановлено.";
+      }
+    } finally {
+      isGenerating = false;
+      abortCtrl = null;
+
+      if ($("stop")) {
+        $("stop").style.display = "none";
+      }
+      if ($("send")) $("send").disabled = false;
+    }
   }
 
   $("send").onclick=send;
+
+  // ====== STOP support (ADD) ======
+  if ($("stop")) $("stop").onclick=stopGeneration;
+
   $("inp").addEventListener("keydown",e=>{ if(e.key==="Enter") send(); });
 
   (async ()=>{
