@@ -54,7 +54,7 @@ body{
   background:rgba(0,0,0,.18);
   color:var(--text);
   border-radius:14px;
-  padding:10px 12px;
+  padding:1px 12px;
   font-weight:800;
   cursor:pointer;
   transition:transform .16s ease, background .16s ease, border-color .16s ease;
@@ -64,6 +64,17 @@ body{
   border:0;
   color:#0b0f1f;
   background:linear-gradient(135deg, #ffffff, rgba(255,255,255,.86));
+}
+
+.save{
+  border:1px solid rgba(255, 255, 255, 0.18);
+  background: rgb(21, 21, 117);
+  color:var(--text);
+  border-radius:14px;
+  padding:10px 12px;
+  font-weight:800;
+  cursor:pointer;
+  transition:transform .16s ease, background .16s ease, border-color .16s ease;
 }
 
 .note{opacity:.85;font-size:12px;color:var(--muted)}

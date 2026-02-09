@@ -19,7 +19,7 @@ export default function App() {
           <input id="renameInp" className="modalInput" placeholder="Название…" />
           <div className="modalActions">
             <button className="btn" id="renameCancel">Отмена</button>
-            <button className="btn primary" id="renameOk">Сохранить</button>
+            <button className="save" id="renameOk">Сохранить</button>
           </div>
         </div>
       </div>

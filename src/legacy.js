@@ -100,6 +100,11 @@ export function startLegacy() {
     if(e.key==="Escape") closeRenameModal();
   });
 
+  // ====== Scroll helper (ADD) ======
+  function isNearBottom(el){
+    return (el.scrollHeight - el.scrollTop - el.clientHeight) < 60;
+  }
+
   // ====== Load Chats / Messages ======
   async function loadChats(){
     setStatus("Загрузка…");
@@ -120,7 +125,12 @@ export function startLegacy() {
     const r=await api(`/messages?initData=${encodeURIComponent(initData)}&chat_id=${encodeURIComponent(chatId)}`);
     const j=await r.json();
     (j.messages||[]).forEach(m=>addMsg(m.role,m.content));
-    $("msgs").scrollTop=$("msgs").scrollHeight;
+
+    // было: $("msgs").scrollTop=$("msgs").scrollHeight;
+    // FIX: скроллим вниз только если пользователь и так был внизу
+    const box = $("msgs");
+    if (isNearBottom(box)) box.scrollTop = box.scrollHeight;
+
     closeDrawer();
   }
 
@@ -164,8 +174,14 @@ export function startLegacy() {
     const d=document.createElement("div");
     d.className="msg "+role;
     d.textContent=text||"";
-    $("msgs").appendChild(d);
-    $("msgs").scrollTop=$("msgs").scrollHeight;
+
+    // было: append + scroll всегда вниз
+    // FIX: скроллим вниз только если юзер был внизу до добавления
+    const box = $("msgs");
+    const stick = isNearBottom(box);
+    box.appendChild(d);
+    if(stick) box.scrollTop = box.scrollHeight;
+
     return d;
   }
 
@@ -204,8 +220,13 @@ export function startLegacy() {
         const chunk=lines.map(x=>x.slice(6)).join("\n");
         if(chunk==="__START__"||chunk==="__DONE__") continue;
         full+=chunk;
+
+        // было: всегда тянули вниз => нельзя листать
+        // FIX: тянем вниз ТОЛЬКО если пользователь был внизу
+        const box = $("msgs");
+        const stick = isNearBottom(box);
         aiEl.textContent=full;
-        $("msgs").scrollTop=$("msgs").scrollHeight;
+        if(stick) box.scrollTop = box.scrollHeight;
       }
     }
     setStatus("Готово");
