@@ -102,7 +102,7 @@ export function startLegacy() {
 
   // ====== Scroll helper (ADD) ======
   function isNearBottom(el){
-    return (el.scrollHeight - el.scrollTop - el.clientHeight) < 60;
+    return (el.scrollHeight - el.scrollTop - el.clientHeight) < 10;
   }
 
   // ====== Load Chats / Messages ======
