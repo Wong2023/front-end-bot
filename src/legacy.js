@@ -6,10 +6,10 @@ export function startLegacy() {
   const BACKEND_URL="https://telegram-miniapp-backend-nlwh.onrender.com"; // например https://xxx.onrender.com
   const tg=window.Telegram?.WebApp; tg?.ready?.(); tg?.expand?.();
   const initData = tg?.initData || "";
-const isDev =
-  location.hostname === "localhost" ||
-  location.hostname === "127.0.0.1";
- // пусто в браузере -> сервер вернёт 403 (и это ок)
+  const isDev =
+    location.hostname === "localhost" ||
+    location.hostname === "127.0.0.1";
+  // пусто в браузере -> сервер вернёт 403 (и это ок)
   let chats=[], cur=null;
 
   const $=id=>document.getElementById(id);
@@ -83,6 +83,7 @@ const isDev =
           <small>${esc(c.id)}</small>
         </div>
         <div class="rowActions">
+          <button class="iconbtn" title="Переименовать чат" onclick="window._ren(event,'${c.id}')">✏️</button>
           <button class="iconbtn" title="Удалить чат (локально)" onclick="window._del(event,'${c.id}')">🗑</button>
         </div>
       </div>`).join("") || `<div class="note">Чатов пока нет. Нажми “+ Новый”.</div>`;
@@ -107,6 +108,39 @@ const isDev =
 
     renderChats();
     setStatus("Готово");
+  };
+
+  // ✅ НОВОЕ: переименование чата (сохраняется на бэке => на всех устройствах)
+  window._ren = async (e, id) => {
+    e?.stopPropagation?.();
+
+    const curTitle = chats.find(c => c.id === id)?.title || "";
+    const title = prompt("Новое название чата:", curTitle);
+    if (title == null) return;
+
+    const newTitle = title.trim();
+    if (!newTitle) return;
+
+    try {
+      setStatus("Сохраняю…");
+
+      await api(`/chats/title`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ initData, chat_id: id, title: newTitle })
+      });
+
+      chats = chats.map(c => c.id === id ? { ...c, title: newTitle } : c);
+
+      if (cur === id) $("title").textContent = newTitle;
+
+      renderChats();
+      setStatus("Готово");
+    } catch (err) {
+      console.error(err);
+      setStatus("Ошибка");
+      alert("Не удалось переименовать: " + String(err));
+    }
   };
 
   function addMsg(role, text){
@@ -187,8 +221,6 @@ const isDev =
     $("msgs").innerHTML=`<div class="msg ai">❌ ${esc(String(e))}</div>`;
   });
 })();
-
-
 
   // ===== ЗАКРЫВАТЬ КЛАВУ ПО ТАПУ ВНЕ INPUT =====
   const onTouch = (e) => {
