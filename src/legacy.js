@@ -109,6 +109,12 @@ export function startLegacy() {
   let isGenerating = false;
   let abortCtrl = null;
 
+  function setInputEnabled(on){
+    const wrap = document.querySelector(".input");
+    if(!wrap) return;
+    wrap.style.display = on ? "" : "none";
+  }
+
   function setSendMode(mode){
     const btn = $("send");
     if(!btn) return;
@@ -152,13 +158,22 @@ export function startLegacy() {
     chats=(j.chats||[]).filter(c=>!isDeleted(c.id));
     if(!cur && chats[0]) cur=chats[0].id;
     if(cur && isDeleted(cur)) cur=chats[0]?.id||null;
+
+    // ✅ ADD: прячем/показываем ввод если чата нет
+    setInputEnabled(!!cur);
+
     renderChats();
     if(cur) await loadMessages(cur);
     setStatus("Готово");
   }
 
   async function loadMessages(chatId){
-    cur=chatId; renderChats();
+    cur=chatId;
+
+    // ✅ ADD: если чат выбран — показываем ввод
+    setInputEnabled(true);
+
+    renderChats();
     $("title").textContent=(chats.find(c=>c.id===cur)?.title)||"Чат";
     $("msgs").innerHTML="";
     const r=await api(`/messages?initData=${encodeURIComponent(initData)}&chat_id=${encodeURIComponent(chatId)}`);
@@ -211,6 +226,13 @@ export function startLegacy() {
       $("title").textContent=cur?(chats.find(c=>c.id===cur)?.title||"Чат"):"Выбери чат";
       if(cur) loadMessages(cur).catch(()=>{});
     }
+
+    // ✅ ADD: если чата нет — прячем ввод и покажем подсказку
+    setInputEnabled(!!cur);
+    if(!cur){
+      $("msgs").innerHTML = `<div class="msg ai">Нажми <b>+ Новый</b>, чтобы создать чат.</div>`;
+    }
+
     renderChats();
     setStatus("Готово");
   };
@@ -232,6 +254,10 @@ export function startLegacy() {
     const id=String(Date.now());
     chats=[{id,title:"Новый чат"}].concat(chats);
     cur=id;
+
+    // ✅ ADD: чат выбран — показываем ввод
+    setInputEnabled(true);
+
     renderChats();
     $("msgs").innerHTML="";
     $("title").textContent="Новый чат";
@@ -324,15 +350,24 @@ export function startLegacy() {
         setStatus("DEV режим");
         chats=[{id:"dev",title:"DEV чат"}];
         cur="dev";
+
+        // ✅ ADD: в dev есть чат — показываем ввод
+        setInputEnabled(true);
+
         renderChats();
         $("title").textContent="DEV чат";
         addMsg("ai","Локальный режим");
         return;
       }
+
+      // ✅ ADD: без initData — ввод прячем
+      setInputEnabled(false);
+
       setStatus("Открой Mini App");
       $("msgs").innerHTML=`<div class="msg ai">Открой через кнопку <b>Mini App</b>.</div>`;
       return;
     }
+
     await loadChats().catch(e=>{
       setStatus("Ошибка");
       $("msgs").innerHTML=`<div class="msg ai">❌ ${esc(String(e))}</div>`;
@@ -348,6 +383,12 @@ export function startLegacy() {
 
   // на старте ставим нормальный режим
   setSendMode("send");
+
+  // ✅ ADD: если чатов/чата нет — прячем ввод и показываем подсказку красиво
+  if(!cur){
+    setInputEnabled(false);
+    if($("msgs")) $("msgs").innerHTML = `<div class="msg ai">Нажми <b>+ Новый</b>, чтобы создать чат.</div>`;
+  }
 
   return ()=>{ document.removeEventListener("touchstart",onTouch); };
 }
