@@ -140,6 +140,10 @@ export function startLegacy() {
     try{ abortCtrl?.abort(); }catch(e){}
   }
 
+  // ====== Rename availability (ADD) ======
+  // chat_id -> true если в этом чате уже есть хотя бы одно сообщение от AI
+  const aiReady = Object.create(null);
+
   // ====== Load Chats / Messages ======
   async function loadChats(){
     setStatus("Загрузка…");
@@ -159,10 +163,18 @@ export function startLegacy() {
     $("msgs").innerHTML="";
     const r=await api(`/messages?initData=${encodeURIComponent(initData)}&chat_id=${encodeURIComponent(chatId)}`);
     const j=await r.json();
+
+    // ADD: определяем, был ли уже AI в этом диалоге
+    const hasAi = (j.messages||[]).some(m => m && m.role === "ai");
+    if(hasAi) aiReady[String(chatId)] = true;
+
     (j.messages||[]).forEach(m=>addMsg(m.role,m.content));
 
     const box = $("msgs");
     if (isNearBottom(box)) box.scrollTop = box.scrollHeight;
+
+    // ADD: если статус изменился, перерисуем список (появится ✏️)
+    if(hasAi) renderChats();
 
     closeDrawer();
   }
@@ -176,7 +188,7 @@ export function startLegacy() {
           <small>${esc(c.id)}</small>
         </div>
         <div class="rowActions">
-          <button class="iconbtn" title="Переименовать" onclick="window._ren(event,'${c.id}')">✏️</button>
+          ${aiReady[String(c.id)] ? `<button class="iconbtn" title="Переименовать" onclick="window._ren(event,'${c.id}')">✏️</button>` : ``}
           <button class="iconbtn" title="Удалить чат" onclick="window._del(event,'${c.id}')">🗑</button>
         </div>
       </div>`).join("") || `<div class="note">Чатов пока нет.</div>`;
@@ -269,6 +281,11 @@ export function startLegacy() {
         }
       }
       setStatus("Готово");
+
+      // ADD: после первой генерации разрешаем переименование навсегда
+      aiReady[String(cur)] = true;
+      renderChats();
+
       await loadChats();
     } catch(e){
       const msg = String(e || "");
@@ -279,6 +296,12 @@ export function startLegacy() {
       } else {
         setStatus("Остановлено");
         if(!aiEl.textContent) aiEl.textContent = "⏹ Остановлено.";
+      }
+
+      // ADD: если уже успели получить хоть что-то от AI — считаем, что AI был
+      if((aiEl.textContent || "").trim()){
+        aiReady[String(cur)] = true;
+        renderChats();
       }
     } finally {
       isGenerating = false;
