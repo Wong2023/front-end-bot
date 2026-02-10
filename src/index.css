@@ -24,7 +24,7 @@ body{
   overflow:hidden;
 }
 .wrap{
-  height:100vh;
+  height:calc(var(--vh, 1vh) * 100);
   display:grid;
   grid-template-columns:340px 1fr;
 }
@@ -66,6 +66,8 @@ body{
   background:linear-gradient(135deg, #ffffff, rgba(255,255,255,.86));
 }
 
+.meta small { display: none; }
+
 .save{
   border:1px solid rgba(255, 255, 255, 0.18);
   background: rgb(21, 21, 117);
@@ -90,7 +92,7 @@ html, body {
   flex-direction:column;
   gap:8px;
   padding-right:6px;
-  height:calc(100vh - 140px);
+  height:calc((var(--vh, 1vh) * 100) - 140px);
 }
 .list::-webkit-scrollbar{width:10px}
 .list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:999px}
@@ -240,7 +242,7 @@ input, textarea {
   .drawerShade{display:block}
   .drawerShade.show{opacity:1;pointer-events:auto}
   .hamb{display:inline-flex}
-  .list{height:calc(100vh - 156px)}
+  .list{height:calc((var(--vh, 1vh) * 100) - 156px)}
 }
 @media (max-width: 420px){
   .top{padding:12px}

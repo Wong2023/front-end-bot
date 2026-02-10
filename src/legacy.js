@@ -390,5 +390,20 @@ export function startLegacy() {
     if($("msgs")) $("msgs").innerHTML = `<div class="msg ai">Нажми <b>+ Новый</b>, чтобы создать чат.</div>`;
   }
 
-  return ()=>{ document.removeEventListener("touchstart",onTouch); };
+  // ===== Fix keyboard jump on mobile (ADD) =====
+   function setVh(){
+    const vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty("--vh", `${vh}px`);
+  }
+
+  setVh();
+  window.addEventListener("resize", setVh);
+  window.visualViewport?.addEventListener("resize", setVh);
+
+  return ()=>{
+    document.removeEventListener("touchstart", onTouch);
+    window.removeEventListener("resize", setVh);
+    window.visualViewport?.removeEventListener("resize", setVh);
+  };
 }
+
